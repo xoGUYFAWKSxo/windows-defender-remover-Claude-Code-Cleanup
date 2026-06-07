@@ -29,7 +29,7 @@ This application removes / disables Windows Defender, including the Windows Secu
         - support for Windows Security Center including Windows Security Center Service (wscsvc), Windows Security Service (SgrmBroker, Sgrm Drivers) which are needed to run Windows Security App.
         - virtualization support.
             - Hypervisor startup (this fixes disablation of Virtualization Based Security, this will auto enable if you use Hyper-V and/or WSL (Windows Subsystem for Linux), WSA (Windows Subsystem for Android))
-            - LUA (disables File Virtualization and User Account Control, which will run all apps as administrator priviliges (also fixes old app errors))
+            - LUA (disables File Virtualization and User Account Control, which will run all apps with administrator privileges (also fixes old app errors))
             - Exploit Guard (something about Exploits)
             - Windows Smart Control
             - Tamper Protection (for Windows 11 21H2 or earlier)
@@ -42,7 +42,7 @@ This application removes / disables Windows Defender, including the Windows Secu
         - Windows Security Section from Settings App.
 
 ### Removing Antivirus Components
-    This script forcily removes following antivirus components:
+    This script forcibly removes the following antivirus components:
       - Windows Defender Definition Update List (this will disable updating definitions of Defender because its removed)
       - Windows Defender SpyNet Telemetry
       - Antivirus Service
@@ -51,10 +51,26 @@ This application removes / disables Windows Defender, including the Windows Secu
       - Shell Associations (Context Menu)
       - Hides Antivirus Protection section from Windows Security App.
 
+## ♻️ Restoring Defender
+
+This tool can attempt to undo its changes:
+
+```bat
+Script_Run.bat /restore
+```
+
+This removes the disabling policy keys, resets the Defender service start
+values, and uses `DISM /RestoreHealth` + `sfc /scannow` to bring back service
+definitions and files from the Windows component store. It is **best-effort** —
+if you also removed the component store, or after a complete removal, a
+Windows in-place repair / reinstall may be required. Tamper Protection must be
+re-enabled manually in the Windows Security app. See
+[Restore_Defender](./Restore_Defender/README.md) for details and limitations.
+
 ## 📃 Instructions
 
 > [!NOTE]
-> A system restore point is recommended before you run the script. (if you don't know what are you doing)
+> A System Restore point or full backup is strongly recommended before you run the script, especially if you are unsure what it does.
 
 1. Download the packed script from [Releases](https://github.com/ionuttbara/windows-defender-remover/releases)
 2. Run the ".exe" as administrator
@@ -84,14 +100,25 @@ You can file an [issue](https://github.com/ionuttbara/windows-defender-remover/i
 
 ## 📃 Automation of the script
 
-You can remove Defender with arguments.
+`Script_Run.bat` accepts command-line arguments, so it can run unattended. The
+arguments are forwarded through the UAC elevation prompt, so they work even when
+the script has to relaunch itself as administrator.
 
-#### Removing
+| Argument | Action |
+| --- | --- |
+| `/r` | Remove Defender antivirus **and** the Windows Security App |
+| `/a` | Remove Defender antivirus only (keeps the Security App) |
+| `/s` | Remove leftover Defender files (run after `/r` or `/a`) |
+| `/restore` | Restore / re-enable Defender (best-effort) |
+| `/n` or `/noreboot` | Apply changes but do not reboot automatically |
+| `/?` or `/help` | Show usage |
 
-```PowerShell
-# Removal
-Defender.Remover.exe /r <# or /R #>
+```bat
+:: Remove everything, without an automatic reboot
+Script_Run.bat /r /noreboot
 ```
+
+> All actions are written to `DefenderRemover.log` next to the script.
 
 
 ## Disable or Remove Windows Defender *Application Guard Policies* (advanced)
@@ -125,7 +152,7 @@ Remove-Item -Path "$env:windir\WinSxS" -Include *winsipolicy.p7b* -Recurse
 
 ## Creating an ISO with Windows Defender and Services disabled
 
-You can create an ISO with Windoows Defender and Security Services Disabled. It's easy, so this is a fiie which it can helps you.
+You can create an ISO with Windows Defender and Security Services disabled. It's easy — this is a file which can help you.
 Here are the rules:
 1. Mount the ISO and extract it into location.
 2. Open the **sources** folder and create the **$OEM$** folder. (this is needed to run the DefenderRemover part in OOBE).
@@ -134,8 +161,8 @@ Here are the rules:
 5. Open the **Panther** folder.
    The path it shown like to
     **%location of extracted ISO%\sources\$OEM$\$$\Panther\**
-6. Download the unnatended.xml file from repo in ISO_Maker folder and put it in Panther folder.
-7. Save this as bootable ISO. (for now the script can't do this automaticly, but it will do in next version).
+6. Download the unattend.xml file from the repo's ISO_Maker folder and put it in the Panther folder.
+7. Save this as a bootable ISO. (For now the script can't do this automatically, but it will in a next version.)
     
 
 ## ❓ Frequently Asked Questions
@@ -198,6 +225,6 @@ Apps and features which is used by Windows Virtualization:
 
 - Windows Subsystem for **Android**/**Linux** - HyperV Virtual Machine
 - <a href="https://apps.microsoft.com/detail/9n0tn65p5bf6?hl=en-US&gl=US" target="_blank">Microsoft Emulator</a>  (Windows 10X Emulator which you can find in Microsoft Store)
-- Android Studio integration in VisuaL Studio  or another Emulators (for Windows 10 22H2 with March 2025 Update or newer)
+- Android Studio integration in Visual Studio or other emulators (for Windows 10 22H2 with the March 2025 Update or newer)
 
 If you open those one of that app mentioned earlier, VBS will be enabled without user intervention. Its needed to run Virtual Machine engine. If you don't use any virtual machine, you can file an Issue at <a href="https://github.com/ionuttbara/windows-defender-remover/issues" target="_blank">here</a>.
